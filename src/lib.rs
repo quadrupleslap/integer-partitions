@@ -115,7 +115,7 @@ impl Partitions {
         }
 
         Partitions {
-            a: vec![0; n + 1],
+            a: vec,
             k: 1,
             y: n - 1,
             next: State::A,
