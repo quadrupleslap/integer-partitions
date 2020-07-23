@@ -4,6 +4,8 @@
 //! [Jerome Kelleher](http://jeromekelleher.net/generating-integer-partitions.html),
 //! which takes a constant amount of time for each partition.
 
+#![deny(missing_docs)]
+
 /// Iterates over the partitions of a given positive integer.
 pub struct Partitions {
     a: Vec<usize>,
