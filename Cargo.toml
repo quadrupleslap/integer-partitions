@@ -4,5 +4,5 @@ description = "Efficiently enumerate integer partitions."
 repository = "https://github.com/quadrupleslap/integer-partitions"
 keywords = ["integer", "partition"]
 license = "MIT"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Ram Kaniyur <quadrupleslap@gmail.com>"]
