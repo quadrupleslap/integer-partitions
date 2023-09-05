@@ -31,68 +31,6 @@ impl Partitions {
         }
     }
 
-    /// Advances the iterator and returns the next partition.
-    #[inline]
-    pub fn next(&mut self) -> Option<&[usize]> {
-        let Partitions {
-            ref mut a,
-            ref mut k,
-            ref mut y,
-            ref mut next
-        } = *self;
-
-        match *next {
-            State::A => {
-                if *k == 0 {
-                    if a.len() == 1 {
-                        a.pop();
-                        Some(&[])
-                    } else {
-                        None
-                    }
-                } else {
-                    *k -= 1;
-                    let x = a[*k] + 1;
-
-                    while 2 * x <= *y {
-                        a[*k] = x;
-                        *y -= x;
-                        *k += 1;
-                    }
-
-                    let l = *k + 1;
-
-                    if x <= *y {
-                        a[*k] = x;
-                        a[l] = *y;
-                        *next = State::B { x, l };
-                        Some(&a[..*k + 2])
-                    } else {
-                        a[*k] = x + *y;
-                        *y = x + *y - 1;
-                        Some(&a[..*k + 1])
-                    }
-                }
-            },
-            State::B { mut x, l } => {
-                x += 1;
-                *y -= 1;
-
-                if x <= *y {
-                    a[*k] = x;
-                    a[l] = *y;
-                    *next = State::B { x, l };
-                    Some(&a[..*k + 2])
-                } else {
-                    a[*k] = x + *y;
-                    *y = x + *y - 1;
-                    *next = State::A;
-                    Some(&a[..*k + 1])
-                }
-            },
-        }
-    }
-
     /// Makes a new iterator, trying to avoid allocations.
     ///
     /// Any vector can be passed to this function, since its contents
@@ -126,26 +64,88 @@ impl Partitions {
     }
 }
 
+impl Iterator for Partitions {
+    type Item = Vec<usize>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut result = Vec::new();
+
+        match self.next {
+            State::A => {
+                if self.k == 0 {
+                    if self.a.len() == 1 {
+                        self.a.pop();
+                        return Some(result);
+                    } else {
+                        return None;
+                    }
+                } else {
+                    self.k -= 1;
+                    let x = self.a[self.k] + 1;
+
+                    while 2 * x <= self.y {
+                        self.a[self.k] = x;
+                        self.y -= x;
+                        self.k += 1;
+                    }
+
+                    let l = self.k + 1;
+
+                    if x <= self.y {
+                        self.a[self.k] = x;
+                        self.a[l] = self.y;
+                        self.next = State::B { x, l };
+                        result.extend_from_slice(&self.a[..self.k + 2]);
+                    } else {
+                        self.a[self.k] = x + self.y;
+                        self.y = x + self.y - 1;
+                        result.extend_from_slice(&self.a[..self.k + 1]);
+                    }
+                }
+            }
+            State::B { mut x, l } => {
+                x += 1;
+                self.y -= 1;
+
+                if x <= self.y {
+                    self.a[self.k] = x;
+                    self.a[l] = self.y;
+                    self.next = State::B { x, l };
+                    result.extend_from_slice(&self.a[..self.k + 2]);
+                } else {
+                    self.a[self.k] = x + self.y;
+                    self.y = x + self.y - 1;
+                    self.next = State::A;
+                    result.extend_from_slice(&self.a[..self.k + 1]);
+                }
+            }
+        }
+
+        Some(result)
+    }
+}
+
 #[test]
 fn oeis() {
     //! Tests the first few entries of A000041.
 
     let tests: &[usize] = &[
-        1, 1, 2, 3, 5, 7, 11, 15, 22,
-        30, 42, 56, 77, 101, 135, 176, 231,
-        297, 385, 490, 627, 792, 1002, 1255, 1575,
-        1958, 2436, 3010, 3718, 4565, 5604, 6842, 8349,
-        10143, 12310, 14883, 17977, 21637, 26015, 31185, 37338,
-        44583, 53174, 63261, 75175, 89134, 105558, 124754, 147273,
-        173525,
+        1, 1, 2, 3, 5, 7, 11, 15, 22, 30, 42, 56, 77, 101, 135, 176, 231, 297, 385, 490, 627, 792,
+        1002, 1255, 1575, 1958, 2436, 3010, 3718, 4565, 5604, 6842, 8349, 10143, 12310, 14883,
+        17977, 21637, 26015, 31185, 37338, 44583, 53174, 63261, 75175, 89134, 105558, 124754,
+        147273, 173525,
     ];
 
+    for partition in Partitions::new(10) {
+        print!("{:?}\n", partition)
+    }
+
     for (i, &n) in tests.iter().enumerate() {
-        let mut p = Partitions::new(i);
+        let p = Partitions::new(i);
         let mut c = 0;
 
-        while let Some(x) = p.next() {
-            let sum: usize = x.iter().cloned().sum();
+        for partition in p {
+            let sum: usize = partition.iter().cloned().sum();
             assert_eq!(sum, i);
             c += 1;
         }
